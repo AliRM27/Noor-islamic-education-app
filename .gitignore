@@ -37,25 +37,25 @@ backend/dist/
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 # Expo
-app/.expo/
-app/dist/
-app/web-build/
-app/expo-env.d.ts
+frontend/.expo/
+frontend/dist/
+frontend/web-build/
+frontend/expo-env.d.ts
 
 # React Native build outputs
-app/android/
-app/ios/
-app/*.jks
-app/*.p8
-app/*.p12
-app/*.key
-app/*.mobileprovision
-app/*.orig.*
+frontend/android/
+frontend/ios/
+frontend/*.jks
+frontend/*.p8
+frontend/*.p12
+frontend/*.key
+frontend/*.mobileprovision
+frontend/*.orig.*
 
 # Metro bundler
-app/.metro-health-check*
+frontend/.metro-health-check*
 
 # EAS
-app/eas.json
+frontend/eas.json
 
 NOOR_PROJECT_OVERVIEW.md
