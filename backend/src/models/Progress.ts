@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IProgress extends Document {
   user_id: mongoose.Types.ObjectId;
   lesson_id: mongoose.Types.ObjectId;
+  topic_id: mongoose.Types.ObjectId;
   stars: number;
   accuracy_pct: number;
   completed_at: Date;
@@ -13,6 +14,7 @@ export interface IProgress extends Document {
 const ProgressSchema = new Schema<IProgress>({
   user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   lesson_id: { type: Schema.Types.ObjectId, ref: 'Lesson', required: true },
+  topic_id: { type: Schema.Types.ObjectId, ref: 'Topic', required: true },
   stars: { type: Number, min: 1, max: 3, required: true },
   accuracy_pct: { type: Number, min: 0, max: 100, required: true },
   completed_at: { type: Date, default: Date.now },

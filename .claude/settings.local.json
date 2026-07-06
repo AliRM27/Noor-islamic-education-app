@@ -6,7 +6,21 @@
       "Bash(node -e \"const pkg = require\\('./node_modules/react-native-svg/package.json'\\); console.log\\(pkg.version\\)\")",
       "Bash(node -e \"const pkg = require\\('./node_modules/react-native/package.json'\\); console.log\\(pkg.version\\)\")",
       "Bash(npm view *)",
-      "Bash(node -e \"const v=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const vs=JSON.parse\\(v\\); console.log\\(vs.filter\\(x=>x.startsWith\\('15.'\\)\\).slice\\(-10\\).join\\('\\\\n'\\)\\)\")"
+      "Bash(node -e \"const v=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const vs=JSON.parse\\(v\\); console.log\\(vs.filter\\(x=>x.startsWith\\('15.'\\)\\).slice\\(-10\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(brew services *)",
+      "Bash(npm run *)",
+      "Bash(cat /tmp/noor-backend.log 2>&1 | tail -20; echo \"---pwd---\"; pwd)",
+      "Read(//private/tmp/**)",
+      "Bash(cat)",
+      "Bash(npx ts-node *)",
+      "Bash(curl -s http://localhost:3000/api/topics -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGMwZWVjYWY3ZmQ5MjZkYmU1NGY0MCIsInR5cGUiOiJjaGlsZCIsImlhdCI6MTc4MzM2OTQ1MiwiZXhwIjoxNzgzMzcwMzUyfQ.wXaVySQhl1MWwUI4H_Alb1R3bjiyPETHyPCW2DlYxFc')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}\\\\n' http://localhost:3000/api/lessons -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGMwZWVjYWY3ZmQ5MjZkYmU1NGY0MCIsInR5cGUiOiJjaGlsZCIsImlhdCI6MTc4MzM2OTQ1MiwiZXhwIjoxNzgzMzcwMzUyfQ.wXaVySQhl1MWwUI4H_Alb1R3bjiyPETHyPCW2DlYxFc')",
+      "Bash(curl -s -X POST http://localhost:3000/api/progress/complete -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNGMwZWVjYWY3ZmQ5MjZkYmU1NGY0MCIsInR5cGUiOiJjaGlsZCIsImlhdCI6MTc4MzM2OTQ1MiwiZXhwIjoxNzgzMzcwMzUyfQ.wXaVySQhl1MWwUI4H_Alb1R3bjiyPETHyPCW2DlYxFc' -H 'Content-Type: application/json' -d '{\"lesson_id\":\"6a4c0e72aac278cb25f06999\",\"accuracy_pct\":95,\"time_spent_seconds\":30}')",
+      "Bash(osascript -e ' *)",
+      "Bash(xcrun simctl *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

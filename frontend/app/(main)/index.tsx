@@ -5,101 +5,79 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Fonts, Radius, ARABIC_LETTERS } from '../../src/constants/theme';
-import { apiGetLessons, ApiLesson } from '../../src/services/api';
+import { Colors, Fonts, Radius } from '../../src/constants/theme';
+import { apiGetTopics, ApiTopic } from '../../src/services/api';
 import { useUserStore } from '../../src/store/userStore';
 
-// Tile background colour cycling through 4 pastels
-const TILE_COLORS = [
-  Colors.tileYellow,
-  Colors.tileGreen,
-  Colors.tileBlue,
-  Colors.tilePink,
+// Static fallback shown when the backend is unreachable — mirrors the one
+// real topic seeded today so the app still opens something to a child offline.
+const FALLBACK_TOPICS: ApiTopic[] = [
+  {
+    _id: 'local-alphabet',
+    slug: 'arabic-alphabet',
+    title_en: 'Arabic Alphabet',
+    title_ar: 'الحروف العربية',
+    description_en: 'Learn to read and write the 28 letters.',
+    description_ar: 'تعلم قراءة وكتابة الحروف العربية.',
+    icon: '📖',
+    color: 'tileGreen',
+    min_age: 4,
+    max_age: 8,
+    is_free: true,
+    lesson_count: 28,
+    completed_count: 0,
+  },
 ];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { name, progress, logout } = useUserStore();
+  const { name } = useUserStore();
 
-  const [lessons, setLessons] = useState<ApiLesson[]>([]);
+  const [topics, setTopics] = useState<ApiTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
 
-  const fetchLessons = useCallback(async () => {
+  const fetchTopics = useCallback(async () => {
     try {
-      const data = await apiGetLessons();
-      setLessons(data);
+      const data = await apiGetTopics();
+      setTopics(data);
       setError(false);
     } catch {
-      // Backend offline — fall back to static letter list
       setError(true);
-      setLessons([]); // will render static grid
+      setTopics(FALLBACK_TOPICS);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => { fetchLessons(); }, [fetchLessons]);
+  useEffect(() => { fetchTopics(); }, [fetchTopics]);
 
-  const onRefresh = () => { setRefreshing(true); fetchLessons(); };
+  const onRefresh = () => { setRefreshing(true); fetchTopics(); };
 
-  // Use backend data if available, otherwise static fallback
-  const items = lessons.length > 0
-    ? lessons.map((l, i) => ({
-        id: l._id,
-        position: l.position,
-        letter: l.letter.letter,
-        nameEn: l.letter.name_en,
-        nameAr: l.letter.name_ar,
-        isFree: l.is_free,
-        stars: progress[l._id] ?? 0,
-        tileColor: TILE_COLORS[(l.position - 1) % 4],
-        lessonData: l,
-      }))
-    : ARABIC_LETTERS.map((l) => ({
-        id: `local-${l.position}`,
-        position: l.position,
-        letter: l.letter,
-        nameEn: l.nameEn,
-        nameAr: l.nameAr,
-        isFree: l.position <= 5,
-        stars: 0,
-        tileColor: Colors[l.color],
-        lessonData: null,
-      }));
-
-  const completedCount = items.filter((i) => i.stars > 0).length;
-  const greetingEmoji = completedCount === 0 ? '🌙' : completedCount < 14 ? '⭐' : '✨';
-
-  const renderTile = ({ item }: { item: typeof items[0] }) => {
-    const done = item.stars > 0;
+  const renderTopic = ({ item }: { item: ApiTopic }) => {
+    const tileColor = (Colors as any)[item.color] ?? Colors.tileGreen;
+    const done = item.completed_count > 0 && item.completed_count >= item.lesson_count;
     return (
       <TouchableOpacity
-        style={[s.tile, { backgroundColor: item.tileColor }]}
+        style={[s.card, { backgroundColor: tileColor }]}
         onPress={() =>
           router.push({
-            pathname: '/(main)/lesson/[id]',
-            params: {
-              id: item.id,
-              letter: item.letter,
-              nameEn: item.nameEn,
-              nameAr: item.nameAr,
-              position: String(item.position),
-            },
+            pathname: '/(main)/topic/[id]',
+            params: { id: item._id, slug: item.slug, titleEn: item.title_en },
           })
         }
-        activeOpacity={0.75}
+        activeOpacity={0.8}
       >
-        {/* Star badge if completed */}
-        {done && (
-          <View style={s.starBadge}>
-            <Text style={s.starBadgeText}>★</Text>
-          </View>
-        )}
-        <Text style={s.tileArabic}>{item.letter}</Text>
-        <Text style={s.tileNameEn}>{item.nameEn}</Text>
+        <Text style={s.cardIcon}>{item.icon}</Text>
+        <View style={s.cardBody}>
+          <Text style={s.cardTitle}>{item.title_en}</Text>
+          <Text style={s.cardMeta}>Ages {item.min_age}-{item.max_age}</Text>
+          <Text style={s.cardProgress}>
+            {done ? '✓ Complete' : `${item.completed_count} / ${item.lesson_count} lessons`}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -108,18 +86,8 @@ export default function HomeScreen() {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <View>
-          <Text style={s.greeting}>
-            {greetingEmoji} Hi, {name || 'there'}!
-          </Text>
-          <Text style={s.progress}>
-            {completedCount} / 28 letters learned
-          </Text>
-        </View>
-        {/* Progress pill */}
-        <View style={s.pillWrap}>
-          <View style={[s.pillFill, { width: `${(completedCount / 28) * 100}%` as any }]} />
-        </View>
+        <Text style={s.greeting}>🌙 Hi, {name || 'there'}!</Text>
+        <Text style={s.subtitle}>What do you want to learn today?</Text>
       </View>
 
       {loading ? (
@@ -128,12 +96,10 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={items}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderTile}
-          numColumns={4}
-          contentContainerStyle={s.grid}
-          columnWrapperStyle={s.row}
+          data={topics}
+          keyExtractor={(item) => item._id}
+          renderItem={renderTopic}
+          contentContainerStyle={s.list}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.green} />
           }
@@ -143,8 +109,6 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const TILE_SIZE = 80;
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
@@ -160,59 +124,43 @@ const s = StyleSheet.create({
     fontSize: 24,
     color: Colors.textDark,
   },
-  progress: {
+  subtitle: {
     fontFamily: Fonts.regular,
     fontSize: 14,
     color: Colors.textMedium,
     marginTop: 2,
-    marginBottom: 10,
   },
-  pillWrap: {
-    height: 8,
-    backgroundColor: Colors.background,
-    borderRadius: Radius.full,
-    overflow: 'hidden',
-    marginTop: 4,
-  },
-  pillFill: {
-    height: '100%',
-    backgroundColor: Colors.green,
-    borderRadius: Radius.full,
-  },
-  grid: {
-    paddingHorizontal: 12,
+  list: {
+    paddingHorizontal: 16,
     paddingTop: 16,
+    gap: 14,
   },
-  row: { gap: 10, marginBottom: 10, justifyContent: 'flex-start' },
-  tile: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-    borderRadius: Radius.md,
+  card: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    gap: 2,
+    borderRadius: Radius.lg,
+    padding: 18,
+    gap: 14,
   },
-  starBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
+  cardIcon: {
+    fontSize: 40,
   },
-  starBadgeText: {
-    fontSize: 12,
-    color: Colors.gold,
-  },
-  tileArabic: {
-    fontFamily: Fonts.arabicBold,
-    fontSize: 32,
+  cardBody: { flex: 1, gap: 2 },
+  cardTitle: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 18,
     color: Colors.textDark,
-    textAlign: 'center',
   },
-  tileNameEn: {
+  cardMeta: {
     fontFamily: Fonts.regular,
-    fontSize: 10,
+    fontSize: 12,
     color: Colors.textMedium,
-    textAlign: 'center',
+  },
+  cardProgress: {
+    fontFamily: Fonts.bold,
+    fontSize: 13,
+    color: Colors.textDark,
+    marginTop: 4,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

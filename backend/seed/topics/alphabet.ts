@@ -1,13 +1,9 @@
 /**
- * Seed script — inserts all 28 Arabic letters + 28 lessons into MongoDB.
- * Run with: npm run seed
+ * Seeds the "Arabic Alphabet" topic — 28 letters + 28 lessons.
  */
-import 'dotenv/config';
-import mongoose from 'mongoose';
-import Letter from '../src/models/Letter';
-import Lesson from '../src/models/Lesson';
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/noor';
+import Topic from '../../src/models/Topic';
+import Letter from '../../src/models/Letter';
+import Lesson from '../../src/models/Lesson';
 
 // ── 28 Arabic letters data ────────────────────────────────────────────────────
 const lettersData = [
@@ -216,42 +212,45 @@ const exerciseSequence = [
   { type: 'tap_letter' as const, order: 4 },
 ];
 
-async function seed() {
-  try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+export async function seedAlphabetTopic() {
+  const topic = await Topic.findOneAndUpdate(
+    { slug: 'arabic-alphabet' },
+    {
+      slug: 'arabic-alphabet',
+      title_en: 'Arabic Alphabet',
+      title_ar: 'الحروف العربية',
+      description_en: 'Learn to read and write the 28 letters of the Arabic alphabet.',
+      description_ar: 'تعلم قراءة وكتابة الحروف العربية الثمانية والعشرين.',
+      icon: '📖',
+      color: 'tileGreen',
+      min_age: 4,
+      max_age: 8,
+      position: 1,
+      is_free: true,
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  console.log(`✅ Upserted topic "${topic.title_en}"`);
 
-    // Clear existing data
-    await Letter.deleteMany({});
-    await Lesson.deleteMany({});
-    console.log('🗑️  Cleared existing letters and lessons');
+  await Letter.deleteMany({});
+  await Lesson.deleteMany({ topic_id: topic._id });
+  console.log('🗑️  Cleared existing letters and lessons for this topic');
 
-    // Insert letters
-    const insertedLetters = await Letter.insertMany(lettersData);
-    console.log(`✅ Inserted ${insertedLetters.length} letters`);
+  const insertedLetters = await Letter.insertMany(lettersData);
+  console.log(`✅ Inserted ${insertedLetters.length} letters`);
 
-    // Create lessons (one per letter)
-    const lessonsData = insertedLetters.map((letter) => ({
-      letter_id: letter._id,
-      title_en: `The Letter ${letter.name_en}`,
-      title_ar: `حَرف ${letter.name_ar}`,
-      position: letter.position,
-      exercises: exerciseSequence,
-      is_free: letter.position <= 5, // First 5 letters are free
-    }));
+  const lessonsData = insertedLetters.map((letter) => ({
+    topic_id: topic._id,
+    letter_id: letter._id,
+    title_en: `The Letter ${letter.name_en}`,
+    title_ar: `حَرف ${letter.name_ar}`,
+    position: letter.position,
+    exercises: exerciseSequence,
+    is_free: letter.position <= 5, // First 5 letters are free
+  }));
 
-    const insertedLessons = await Lesson.insertMany(lessonsData);
-    console.log(`✅ Inserted ${insertedLessons.length} lessons`);
-    console.log(`   Free lessons (1–5): ${lessonsData.filter((l) => l.is_free).length}`);
-    console.log(`   Premium lessons (6–28): ${lessonsData.filter((l) => !l.is_free).length}`);
-
-    console.log('\n🌙 Noor database seeded successfully!\n');
-  } catch (err) {
-    console.error('❌ Seed error:', err);
-  } finally {
-    await mongoose.disconnect();
-    process.exit(0);
-  }
+  const insertedLessons = await Lesson.insertMany(lessonsData);
+  console.log(`✅ Inserted ${insertedLessons.length} lessons`);
+  console.log(`   Free lessons (1–5): ${lessonsData.filter((l) => l.is_free).length}`);
+  console.log(`   Premium lessons (6–28): ${lessonsData.filter((l) => !l.is_free).length}`);
 }
-
-seed();

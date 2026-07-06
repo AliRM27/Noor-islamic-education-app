@@ -34,6 +34,7 @@ router.post('/complete', authenticateToken, requireChild, async (req: AuthReques
     const progress = new Progress({
       user_id: userId,
       lesson_id,
+      topic_id: lesson.topic_id,
       stars,
       accuracy_pct: Math.round(accuracy_pct),
       time_spent_seconds: time_spent_seconds || 0,

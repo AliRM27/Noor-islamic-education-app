@@ -62,6 +62,29 @@ export const apiLoginChild = async (name: string, pin: string) => {
   return data;
 };
 
+// ── Topics ────────────────────────────────────────────────────────────────────
+
+export interface ApiTopic {
+  _id: string;
+  slug: string;
+  title_en: string;
+  title_ar: string;
+  description_en: string;
+  description_ar: string;
+  icon: string;
+  color: string;
+  min_age: number;
+  max_age: number;
+  is_free: boolean;
+  lesson_count: number;
+  completed_count: number;
+}
+
+export const apiGetTopics = async (): Promise<ApiTopic[]> => {
+  const { data } = await api.get("/api/topics");
+  return data.topics;
+};
+
 // ── Lessons ───────────────────────────────────────────────────────────────────
 
 export interface ApiLesson {
@@ -76,8 +99,8 @@ export interface ApiLesson {
   };
 }
 
-export const apiGetLessons = async (): Promise<ApiLesson[]> => {
-  const { data } = await api.get("/api/lessons");
+export const apiGetTopicLessons = async (topicId: string): Promise<ApiLesson[]> => {
+  const { data } = await api.get(`/api/topics/${topicId}/lessons`);
   return data.lessons;
 };
 

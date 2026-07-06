@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import './Letter'; // Ensure Letter schema is registered for populate
+import './Topic'; // Ensure Topic schema is registered for populate
 
 export type ExerciseType = 'listen_tap' | 'match_name' | 'tracing' | 'tap_letter';
 
@@ -9,7 +10,8 @@ export interface IExercise {
 }
 
 export interface ILesson extends Document {
-  letter_id: mongoose.Types.ObjectId;
+  topic_id: mongoose.Types.ObjectId;
+  letter_id?: mongoose.Types.ObjectId;
   title_en: string;
   title_ar: string;
   position: number;
@@ -28,12 +30,13 @@ const ExerciseSchema = new Schema<IExercise>({
 });
 
 const LessonSchema = new Schema<ILesson>({
-  letter_id: { type: Schema.Types.ObjectId, ref: 'Letter', required: true },
+  topic_id: { type: Schema.Types.ObjectId, ref: 'Topic', required: true },
+  letter_id: { type: Schema.Types.ObjectId, ref: 'Letter', required: false },
   title_en: { type: String, required: true },
   title_ar: { type: String, required: true },
-  position: { type: Number, required: true, min: 1, max: 28 },
+  position: { type: Number, required: true, min: 1 },
   exercises: [ExerciseSchema],
-  // Letters 1–5 are free, 6–28 require premium
+  // Position within topic determines free/premium gating (e.g. first 5 free)
   is_free: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
 });
