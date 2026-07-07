@@ -104,6 +104,19 @@ export const apiGetTopicLessons = async (topicId: string): Promise<ApiLesson[]> 
   return data.lessons;
 };
 
+// ── Exercises ─────────────────────────────────────────────────────────────────
+
+export type ApiExercise =
+  | { type: 'listen_tap'; order: number; letter: string; name_en: string; name_ar: string; audio_url: string }
+  | { type: 'match_name'; order: number; letter: string; name_en: string; name_ar: string; forms: { isolated: string; initial: string; medial: string; final: string } }
+  | { type: 'tracing'; order: number; letter: string; name_en: string; svg_path: string }
+  | { type: 'tap_letter'; order: number; letter: string; name_en: string; name_ar: string };
+
+export const apiGetLessonExercises = async (lessonId: string): Promise<ApiExercise[]> => {
+  const { data } = await api.get(`/api/lessons/${lessonId}/exercises`);
+  return data.exercises;
+};
+
 // ── Progress ──────────────────────────────────────────────────────────────────
 
 export const apiSubmitProgress = async (
