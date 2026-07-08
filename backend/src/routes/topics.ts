@@ -43,6 +43,7 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       description_ar: topic.description_ar,
       icon: topic.icon,
       color: topic.color,
+      category: topic.category,
       min_age: topic.min_age,
       max_age: topic.max_age,
       is_free: topic.is_free,
@@ -71,7 +72,8 @@ router.get(
 
       const lessons = await Lesson.find({ topic_id: req.params.id })
         .sort({ position: 1 })
-        .populate("letter_id");
+        .populate("letter_id")
+        .populate("dua_id");
 
       const progressDocs = await Progress.aggregate([
         { $match: { user_id: new mongoose.Types.ObjectId(userId) } },
@@ -88,7 +90,8 @@ router.get(
         title_ar: lesson.title_ar,
         position: lesson.position,
         is_free: lesson.is_free,
-        letter: lesson.letter_id,
+        letter: lesson.letter_id ?? undefined,
+        dua: lesson.dua_id ?? undefined,
         best_stars: progressMap.get(lesson._id.toString()) ?? null,
         is_completed: progressMap.has(lesson._id.toString()),
       }));

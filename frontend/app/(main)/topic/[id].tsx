@@ -50,14 +50,16 @@ export default function TopicLessonsScreen() {
 
   const onRefresh = () => { setRefreshing(true); fetchLessons(); };
 
-  // Use backend data if available, otherwise static fallback (alphabet topic only)
+  // Use backend data if available, otherwise static fallback (alphabet topic only).
+  // Lessons without letter data (e.g. Duas) show an icon tile instead of a glyph.
   const items = lessons.length > 0
     ? lessons.map((l) => ({
         id: l._id,
         position: l.position,
-        letter: l.letter.letter,
-        nameEn: l.letter.name_en,
-        nameAr: l.letter.name_ar,
+        letter: l.letter?.letter,
+        display: l.letter?.letter ?? '🤲',
+        nameEn: l.letter?.name_en ?? l.title_en,
+        nameAr: l.letter?.name_ar ?? l.title_ar,
         isFree: l.is_free,
         stars: progress[l._id] ?? 0,
         tileColor: TILE_COLORS[(l.position - 1) % 4],
@@ -67,6 +69,7 @@ export default function TopicLessonsScreen() {
         id: `local-${l.position}`,
         position: l.position,
         letter: l.letter,
+        display: l.letter,
         nameEn: l.nameEn,
         nameAr: l.nameAr,
         isFree: l.position <= 5,
@@ -87,7 +90,7 @@ export default function TopicLessonsScreen() {
             pathname: '/(main)/lesson/[id]',
             params: {
               id: item.id,
-              letter: item.letter,
+              ...(item.letter ? { letter: item.letter } : {}),
               nameEn: item.nameEn,
               nameAr: item.nameAr,
               position: String(item.position),
@@ -102,8 +105,8 @@ export default function TopicLessonsScreen() {
             <Text style={s.starBadgeText}>★</Text>
           </View>
         )}
-        <Text style={s.tileArabic}>{item.letter}</Text>
-        <Text style={s.tileNameEn}>{item.nameEn}</Text>
+        <Text style={s.tileArabic}>{item.display}</Text>
+        <Text style={s.tileNameEn} numberOfLines={1}>{item.nameEn}</Text>
       </TouchableOpacity>
     );
   };

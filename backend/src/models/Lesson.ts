@@ -1,8 +1,11 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import './Letter'; // Ensure Letter schema is registered for populate
+import './Dua'; // Ensure Dua schema is registered for populate
 import './Topic'; // Ensure Topic schema is registered for populate
 
-export type ExerciseType = 'listen_tap' | 'match_name' | 'tracing' | 'tap_letter';
+export type ExerciseType =
+  | 'listen_tap' | 'match_name' | 'tracing' | 'tap_letter'
+  | 'listen_repeat' | 'meaning_match' | 'word_order';
 
 export interface IExercise {
   type: ExerciseType;
@@ -12,6 +15,7 @@ export interface IExercise {
 export interface ILesson extends Document {
   topic_id: mongoose.Types.ObjectId;
   letter_id?: mongoose.Types.ObjectId;
+  dua_id?: mongoose.Types.ObjectId;
   title_en: string;
   title_ar: string;
   position: number;
@@ -23,7 +27,10 @@ export interface ILesson extends Document {
 const ExerciseSchema = new Schema<IExercise>({
   type: {
     type: String,
-    enum: ['listen_tap', 'match_name', 'tracing', 'tap_letter'],
+    enum: [
+      'listen_tap', 'match_name', 'tracing', 'tap_letter',
+      'listen_repeat', 'meaning_match', 'word_order',
+    ],
     required: true,
   },
   order: { type: Number, required: true },
@@ -32,6 +39,7 @@ const ExerciseSchema = new Schema<IExercise>({
 const LessonSchema = new Schema<ILesson>({
   topic_id: { type: Schema.Types.ObjectId, ref: 'Topic', required: true },
   letter_id: { type: Schema.Types.ObjectId, ref: 'Letter', required: false },
+  dua_id: { type: Schema.Types.ObjectId, ref: 'Dua', required: false },
   title_en: { type: String, required: true },
   title_ar: { type: String, required: true },
   position: { type: Number, required: true, min: 1 },

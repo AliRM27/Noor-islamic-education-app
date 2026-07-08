@@ -8,6 +8,7 @@ export interface ITopic extends Document {
   description_ar: string;
   icon: string;
   color: string;
+  category: string;
   min_age: number;
   max_age: number;
   position: number;
@@ -23,6 +24,7 @@ const TopicSchema = new Schema<ITopic>({
   description_ar: { type: String, required: true },
   icon: { type: String, required: true },
   color: { type: String, required: true },
+  category: { type: String, required: true },
   min_age: { type: Number, required: true, min: 1 },
   max_age: { type: Number, required: true, min: 1 },
   position: { type: Number, required: true, min: 1 },

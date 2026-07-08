@@ -73,6 +73,7 @@ export interface ApiTopic {
   description_ar: string;
   icon: string;
   color: string;
+  category: string;
   min_age: number;
   max_age: number;
   is_free: boolean;
@@ -89,13 +90,20 @@ export const apiGetTopics = async (): Promise<ApiTopic[]> => {
 
 export interface ApiLesson {
   _id: string;
+  title_en: string;
+  title_ar: string;
   position: number;
   is_free: boolean;
-  letter: {
+  letter?: {
     letter: string;
     name_en: string;
     name_ar: string;
     forms: { isolated: string; initial: string; medial: string; final: string };
+  };
+  dua?: {
+    title_en: string;
+    arabic_text: string;
+    transliteration: string;
   };
 }
 
@@ -110,7 +118,10 @@ export type ApiExercise =
   | { type: 'listen_tap'; order: number; letter: string; name_en: string; name_ar: string; audio_url: string }
   | { type: 'match_name'; order: number; letter: string; name_en: string; name_ar: string; forms: { isolated: string; initial: string; medial: string; final: string } }
   | { type: 'tracing'; order: number; letter: string; name_en: string; svg_path: string }
-  | { type: 'tap_letter'; order: number; letter: string; name_en: string; name_ar: string };
+  | { type: 'tap_letter'; order: number; letter: string; name_en: string; name_ar: string }
+  | { type: 'listen_repeat'; order: number; arabic_text: string; transliteration: string; audio_url: string }
+  | { type: 'meaning_match'; order: number; arabic_text: string; correct_occasion: string; distractor_occasions: string[] }
+  | { type: 'word_order'; order: number; arabic_text: string; words: string[] };
 
 export const apiGetLessonExercises = async (lessonId: string): Promise<ApiExercise[]> => {
   const { data } = await api.get(`/api/lessons/${lessonId}/exercises`);

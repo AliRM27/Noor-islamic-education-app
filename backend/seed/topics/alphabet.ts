@@ -223,6 +223,7 @@ export async function seedAlphabetTopic() {
       description_ar: 'تعلم قراءة وكتابة الحروف العربية الثمانية والعشرين.',
       icon: '📖',
       color: 'tileGreen',
+      category: 'alphabet',
       min_age: 4,
       max_age: 8,
       position: 1,

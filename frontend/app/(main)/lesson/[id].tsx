@@ -15,7 +15,10 @@ import { useUserStore } from '../../../src/store/userStore';
 const { width } = Dimensions.get('window');
 const CARD_SIZE = width - 64;
 
-const SUPPORTED_TYPES: ApiExercise['type'][] = ['listen_tap', 'match_name', 'tracing', 'tap_letter'];
+const SUPPORTED_TYPES: ApiExercise['type'][] = [
+  'listen_tap', 'match_name', 'tracing', 'tap_letter',
+  'listen_repeat', 'meaning_match', 'word_order',
+];
 
 interface Point { x: number; y: number }
 
@@ -65,8 +68,9 @@ function shuffle<T>(arr: T[]): T[] {
 // intro    — show letter + name, play audio
 // exercise — run through exercises[stepIndex] one at a time
 // done     — show stars
+// empty    — nothing to show (offline + no local fallback for this lesson)
 
-type Phase = 'loading' | 'intro' | 'exercise' | 'done';
+type Phase = 'loading' | 'intro' | 'exercise' | 'done' | 'empty';
 
 interface AnswerChoice {
   key: string;
@@ -95,6 +99,10 @@ export default function LessonScreen() {
   const [completedStrokes, setCompletedStrokes] = useState<Point[][]>([]);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   const [tracingHint, setTracingHint] = useState(false);
+
+  // Word-order exercise
+  const [wordBank, setWordBank] = useState<{ word: string; used: boolean }[]>([]);
+  const [filledWords, setFilledWords] = useState<string[]>([]);
 
   const correctCountRef = useRef(0);
   const totalAnswersRef = useRef(0);
@@ -140,12 +148,18 @@ export default function LessonScreen() {
       } catch {
         // offline — fall through to the local fallback below
       }
-      if (list.length === 0) {
+      // Local fallback only exists for alphabet lessons (route params carry a
+      // single letter) — there's no equivalent offline content for Duas.
+      if (list.length === 0 && letter) {
         list = [
           { type: 'listen_tap', order: 1, letter: letter as string, name_en: nameEn as string, name_ar: nameAr as string, audio_url: '' },
           { type: 'tracing', order: 2, letter: letter as string, name_en: nameEn as string, svg_path: '' },
           { type: 'tap_letter', order: 3, letter: letter as string, name_en: nameEn as string, name_ar: nameAr as string },
         ];
+      }
+      if (list.length === 0) {
+        setPhase('empty');
+        return;
       }
       setExercises(expandSteps(list));
       setPhase('intro');
@@ -210,6 +224,15 @@ export default function LessonScreen() {
       setCompletedStrokes([]);
       setCurrentStroke([]);
       setTracingHint(false);
+    } else if (ex.type === 'meaning_match') {
+      const all: AnswerChoice[] = [
+        { key: 'correct', display: ex.correct_occasion, isCorrect: true },
+        ...ex.distractor_occasions.map((occ, i) => ({ key: `wrong-${i}`, display: occ, isCorrect: false })),
+      ];
+      setChoices(shuffle(all));
+    } else if (ex.type === 'word_order') {
+      setWordBank(shuffle(ex.words).map((word) => ({ word, used: false })));
+      setFilledWords([]);
     }
   };
 
@@ -283,6 +306,35 @@ export default function LessonScreen() {
     setTimeout(goToNextOrDone, 900);
   };
 
+  // listen_repeat isn't gradable without speech recognition — tapping the
+  // confirm button always counts as correct, same spirit as a real repeat-after-me drill.
+  const confirmListenRepeat = () => {
+    totalAnswersRef.current += 1;
+    correctCountRef.current += 1;
+    popCard();
+    setTimeout(goToNextOrDone, 900);
+  };
+
+  const tapWordChip = (index: number) => {
+    if (currentExercise?.type !== 'word_order') return;
+    const chip = wordBank[index];
+    if (chip.used) return;
+    const expectedWord = currentExercise.words[filledWords.length];
+    if (chip.word !== expectedWord) {
+      shakeCard();
+      return;
+    }
+    setWordBank((bank) => bank.map((c, i) => (i === index ? { ...c, used: true } : c)));
+    const newFilled = [...filledWords, chip.word];
+    setFilledWords(newFilled);
+    if (newFilled.length === currentExercise.words.length) {
+      totalAnswersRef.current += 1;
+      correctCountRef.current += 1;
+      popCard();
+      setTimeout(goToNextOrDone, 900);
+    }
+  };
+
   const currentExercise = exercises[stepIndex];
   const headerText = phase === 'exercise' && currentExercise
     ? `Step ${stepIndex + 1} of ${exercises.length}`
@@ -315,8 +367,14 @@ export default function LessonScreen() {
           <Animated.View
             style={[s.letterCard, { backgroundColor: Colors.tileYellow, transform: [{ scale: cardScale }, { translateX: shakeAnim }] }]}
           >
-            <Text style={s.bigLetter}>{letter}</Text>
-            <Text style={s.letterNameAr}>{nameAr}</Text>
+            {letter ? (
+              <>
+                <Text style={s.bigLetter}>{letter}</Text>
+                <Text style={s.letterNameAr}>{nameAr}</Text>
+              </>
+            ) : (
+              <Text style={s.duaIntroText}>{nameAr}</Text>
+            )}
           </Animated.View>
 
           <Text style={s.letterNameEn}>{nameEn}</Text>
@@ -356,7 +414,23 @@ export default function LessonScreen() {
             <Text style={s.questionText}>Trace the letter ✏️</Text>
           )}
 
-          {currentExercise.type !== 'tracing' && (
+          {currentExercise.type === 'listen_repeat' && (
+            <Text style={s.questionText}>Listen and repeat 🔁</Text>
+          )}
+
+          {currentExercise.type === 'meaning_match' && (
+            <>
+              <Text style={s.duaContextText}>{currentExercise.arabic_text}</Text>
+              <Text style={s.questionText}>When do you say this dua? 🤲</Text>
+            </>
+          )}
+
+          {currentExercise.type === 'word_order' && (
+            <Text style={s.questionText}>Put the words in order 🧩</Text>
+          )}
+
+          {(currentExercise.type === 'listen_tap' || currentExercise.type === 'tap_letter'
+            || currentExercise.type === 'match_name' || currentExercise.type === 'meaning_match') && (
             <View style={s.choicesGrid}>
               {choices.map((c, i) => (
                 <TouchableOpacity
@@ -370,7 +444,9 @@ export default function LessonScreen() {
                   onPress={() => handleAnswer(c)}
                   activeOpacity={0.75}
                 >
-                  <Text style={s.choiceLetter}>{c.display}</Text>
+                  <Text style={currentExercise.type === 'meaning_match' ? s.choiceText : s.choiceLetter}>
+                    {c.display}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -413,6 +489,54 @@ export default function LessonScreen() {
               </View>
             </>
           )}
+
+          {currentExercise.type === 'listen_repeat' && (
+            <>
+              <TouchableOpacity style={s.playAgainBtn} onPress={speakLetter} activeOpacity={0.7}>
+                <Ionicons name="volume-high" size={36} color={Colors.green} />
+              </TouchableOpacity>
+              <Text style={s.transliterationText}>{currentExercise.transliteration}</Text>
+              <TouchableOpacity style={s.continueBtn} onPress={confirmListenRepeat} activeOpacity={0.8}>
+                <Text style={s.continueBtnText}>I repeated it! ✓</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {currentExercise.type === 'word_order' && (
+            <>
+              <View style={s.targetRow}>
+                {currentExercise.words.map((_, i) => (
+                  <View key={i} style={s.targetSlot}>
+                    <Text style={s.targetSlotText}>{filledWords[i] ?? ''}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={s.wordBank}>
+                {wordBank.map((chip, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[s.wordChip, chip.used && s.wordChipUsed]}
+                    onPress={() => tapWordChip(i)}
+                    activeOpacity={0.75}
+                    disabled={chip.used}
+                  >
+                    <Text style={s.wordChipText}>{chip.word}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+        </View>
+      )}
+
+      {/* ── EMPTY ─────────────────────────────────────────────────────────── */}
+      {phase === 'empty' && (
+        <View style={s.content}>
+          <Text style={s.doneEmoji}>📡</Text>
+          <Text style={s.doneSubtitle}>Couldn't load this lesson. Check your connection and try again.</Text>
+          <TouchableOpacity style={s.continueBtn} onPress={() => router.back()} activeOpacity={0.8}>
+            <Text style={s.continueBtnText}>Back →</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -421,7 +545,7 @@ export default function LessonScreen() {
         <View style={s.content}>
           <Text style={s.doneEmoji}>🎉</Text>
           <Text style={s.doneTitle}>Great job!</Text>
-          <Text style={s.doneSubtitle}>You learned the letter {nameEn}</Text>
+          <Text style={s.doneSubtitle}>You learned {nameEn}</Text>
 
           {/* Stars */}
           <View style={s.starsRow}>
@@ -437,7 +561,7 @@ export default function LessonScreen() {
             onPress={() => { Speech.stop(); router.back(); }}
             activeOpacity={0.8}
           >
-            <Text style={s.continueBtnText}>Back to letters →</Text>
+            <Text style={s.continueBtnText}>Back to lessons →</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -499,6 +623,27 @@ const s = StyleSheet.create({
     fontSize: 22,
     color: Colors.textMedium,
     writingDirection: 'rtl',
+  },
+  duaIntroText: {
+    fontFamily: Fonts.arabicBold,
+    fontSize: 36,
+    color: Colors.textDark,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    paddingHorizontal: 16,
+  },
+  duaContextText: {
+    fontFamily: Fonts.arabicBold,
+    fontSize: 28,
+    color: Colors.textDark,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+  },
+  transliterationText: {
+    fontFamily: Fonts.regular,
+    fontSize: 16,
+    color: Colors.textMedium,
+    textAlign: 'center',
   },
   letterNameEn: {
     fontFamily: Fonts.extraBold,
@@ -571,6 +716,60 @@ const s = StyleSheet.create({
     fontSize: 52,
     color: Colors.textDark,
     textAlign: 'center',
+  },
+  choiceText: {
+    fontFamily: Fonts.bold,
+    fontSize: 15,
+    color: Colors.textDark,
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+  // Word order
+  targetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  targetSlot: {
+    minWidth: 56,
+    height: 48,
+    borderRadius: Radius.sm,
+    borderWidth: 2,
+    borderColor: Colors.answerBorder,
+    backgroundColor: Colors.greenLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  targetSlotText: {
+    fontFamily: Fonts.arabicBold,
+    fontSize: 20,
+    color: Colors.textDark,
+  },
+  wordBank: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  wordChip: {
+    borderRadius: Radius.md,
+    backgroundColor: Colors.answerIdle,
+    borderWidth: 2,
+    borderColor: Colors.answerBorder,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  wordChipUsed: {
+    opacity: 0.3,
+  },
+  wordChipText: {
+    fontFamily: Fonts.arabicBold,
+    fontSize: 20,
+    color: Colors.textDark,
   },
   // Tracing
   traceBox: {

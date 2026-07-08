@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList,
+  View, Text, StyleSheet, SectionList,
   TouchableOpacity, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, Radius } from '../../src/constants/theme';
 import { apiGetTopics, ApiTopic } from '../../src/services/api';
 import { useUserStore } from '../../src/store/userStore';
+
+// Friendly section labels for known category tags — unknown tags just show as-is
+const CATEGORY_LABELS: Record<string, string> = {
+  alphabet: 'Alphabet',
+  basics: 'Basics',
+  kids: 'Kids',
+};
+
+// Groups topics into sections by category, preserving each category's first
+// appearance order (topics already arrive sorted by `position` from the API)
+function groupByCategory(topics: ApiTopic[]) {
+  const order: string[] = [];
+  const map = new Map<string, ApiTopic[]>();
+  for (const topic of topics) {
+    if (!map.has(topic.category)) {
+      map.set(topic.category, []);
+      order.push(topic.category);
+    }
+    map.get(topic.category)!.push(topic);
+  }
+  return order.map((category) => ({
+    title: CATEGORY_LABELS[category] ?? category,
+    data: map.get(category)!,
+  }));
+}
 
 // Static fallback shown when the backend is unreachable — mirrors the one
 // real topic seeded today so the app still opens something to a child offline.
@@ -21,6 +46,7 @@ const FALLBACK_TOPICS: ApiTopic[] = [
     description_ar: 'تعلم قراءة وكتابة الحروف العربية.',
     icon: '📖',
     color: 'tileGreen',
+    category: 'alphabet',
     min_age: 4,
     max_age: 8,
     is_free: true,
@@ -95,10 +121,13 @@ export default function HomeScreen() {
           <ActivityIndicator size="large" color={Colors.green} />
         </View>
       ) : (
-        <FlatList
-          data={topics}
+        <SectionList
+          sections={groupByCategory(topics)}
           keyExtractor={(item) => item._id}
           renderItem={renderTopic}
+          renderSectionHeader={({ section }) => (
+            <Text style={s.sectionHeader}>{section.title}</Text>
+          )}
           contentContainerStyle={s.list}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.green} />
@@ -134,6 +163,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     gap: 14,
+  },
+  sectionHeader: {
+    fontFamily: Fonts.extraBold,
+    fontSize: 14,
+    color: Colors.textMedium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    backgroundColor: Colors.white,
+    paddingBottom: 8,
+    paddingTop: 4,
   },
   card: {
     flexDirection: 'row',

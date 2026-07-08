@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import Lesson from "../models/Lesson";
 import Letter from "../models/Letter";
+import Dua from "../models/Dua";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 
 const router = Router();
@@ -11,7 +12,9 @@ router.get(
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
     try {
-      const lesson = await Lesson.findById(req.params.id).populate("letter_id");
+      const lesson = await Lesson.findById(req.params.id)
+        .populate("letter_id")
+        .populate("dua_id");
       if (!lesson) {
         res.status(404).json({ error: "Lesson not found" });
         return;
@@ -29,15 +32,26 @@ router.get(
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
     try {
-      const lesson = await Lesson.findById(req.params.id).populate<{
-        letter_id: InstanceType<typeof Letter>;
-      }>("letter_id");
+      const lesson = await Lesson.findById(req.params.id)
+        .populate<{ letter_id: InstanceType<typeof Letter> }>("letter_id")
+        .populate<{ dua_id: InstanceType<typeof Dua> }>("dua_id");
       if (!lesson) {
         res.status(404).json({ error: "Lesson not found" });
         return;
       }
 
       const letter = lesson.letter_id as any;
+      const dua = lesson.dua_id as any;
+
+      // meaning_match needs wrong-answer occasions from other duas — fetch once
+      // up front only if this lesson actually has a meaning_match exercise.
+      let distractorOccasions: string[] = [];
+      if (dua && lesson.exercises.some((ex) => ex.type === "meaning_match")) {
+        const others = await Dua.find({ _id: { $ne: dua._id } })
+          .limit(2)
+          .select("occasion_en");
+        distractorOccasions = others.map((d) => d.occasion_en);
+      }
 
       // Build exercise payloads — client uses these to render exercises
       const exercises = lesson.exercises
@@ -77,6 +91,29 @@ router.get(
                 letter: letter.letter,
                 name_en: letter.name_en,
                 name_ar: letter.name_ar,
+              };
+            case "listen_repeat":
+              return {
+                type: "listen_repeat",
+                order: ex.order,
+                arabic_text: dua.arabic_text,
+                transliteration: dua.transliteration,
+                audio_url: dua.audio_url,
+              };
+            case "meaning_match":
+              return {
+                type: "meaning_match",
+                order: ex.order,
+                arabic_text: dua.arabic_text,
+                correct_occasion: dua.occasion_en,
+                distractor_occasions: distractorOccasions,
+              };
+            case "word_order":
+              return {
+                type: "word_order",
+                order: ex.order,
+                arabic_text: dua.arabic_text,
+                words: dua.words,
               };
             default:
               return ex;
