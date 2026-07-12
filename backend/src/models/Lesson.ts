@@ -18,6 +18,7 @@ export interface ILesson extends Document {
   dua_id?: mongoose.Types.ObjectId;
   title_en: string;
   title_ar: string;
+  title_de: string;
   position: number;
   exercises: IExercise[];
   is_free: boolean;
@@ -42,6 +43,7 @@ const LessonSchema = new Schema<ILesson>({
   dua_id: { type: Schema.Types.ObjectId, ref: 'Dua', required: false },
   title_en: { type: String, required: true },
   title_ar: { type: String, required: true },
+  title_de: { type: String, required: true },
   position: { type: Number, required: true, min: 1 },
   exercises: [ExerciseSchema],
   // Position within topic determines free/premium gating (e.g. first 5 free)

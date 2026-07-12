@@ -11,6 +11,8 @@ import * as Speech from 'expo-speech';
 import { Colors, Fonts, Radius, ARABIC_LETTERS } from '../../../src/constants/theme';
 import { apiGetLessonExercises, apiSubmitProgress, ApiExercise } from '../../../src/services/api';
 import { useUserStore } from '../../../src/store/userStore';
+import { t, TranslationKey } from '../../../src/i18n';
+import { pick } from '../../../src/i18n/localizeContent';
 
 const { width } = Dimensions.get('window');
 const CARD_SIZE = width - 64;
@@ -25,11 +27,11 @@ interface Point { x: number; y: number }
 type Position = 'isolated' | 'initial' | 'medial' | 'final';
 const POSITION_ORDER: Position[] = ['isolated', 'initial', 'medial', 'final'];
 
-const POSITION_LABELS: Record<Position, string> = {
-  isolated: 'ALONE',
-  initial: 'at the START',
-  medial: 'in the MIDDLE',
-  final: 'at the END',
+const POSITION_LABEL_KEYS: Record<Position, TranslationKey> = {
+  isolated: 'positionAlone',
+  initial: 'positionStart',
+  medial: 'positionMiddle',
+  final: 'positionEnd',
 };
 
 // A match_name exercise from the API covers all 4 positions at once — we split it
@@ -84,7 +86,7 @@ export default function LessonScreen() {
     id: string; letter: string; nameEn: string; nameAr: string;
   }>();
 
-  const { markLesson } = useUserStore();
+  const { markLesson, locale } = useUserStore();
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [exercises, setExercises] = useState<Step[]>([]);
@@ -219,15 +221,17 @@ export default function LessonScreen() {
         ...wrongGlyphs.map((g, i) => ({ key: `wrong-${i}`, display: g, isCorrect: false })),
       ];
       setChoices(shuffle(all));
-      setPromptLabel(POSITION_LABELS[target]);
+      setPromptLabel(t(POSITION_LABEL_KEYS[target]));
     } else if (ex.type === 'tracing') {
       setCompletedStrokes([]);
       setCurrentStroke([]);
       setTracingHint(false);
     } else if (ex.type === 'meaning_match') {
+      const correctOccasion = pick(locale, ex.correct_occasion, ex.correct_occasion_de);
+      const distractorOccasions = locale === 'de' ? ex.distractor_occasions_de : ex.distractor_occasions;
       const all: AnswerChoice[] = [
-        { key: 'correct', display: ex.correct_occasion, isCorrect: true },
-        ...ex.distractor_occasions.map((occ, i) => ({ key: `wrong-${i}`, display: occ, isCorrect: false })),
+        { key: 'correct', display: correctOccasion, isCorrect: true },
+        ...distractorOccasions.map((occ, i) => ({ key: `wrong-${i}`, display: occ, isCorrect: false })),
       ];
       setChoices(shuffle(all));
     } else if (ex.type === 'word_order') {
@@ -337,7 +341,7 @@ export default function LessonScreen() {
 
   const currentExercise = exercises[stepIndex];
   const headerText = phase === 'exercise' && currentExercise
-    ? `Step ${stepIndex + 1} of ${exercises.length}`
+    ? t('stepOf', { n: stepIndex + 1, total: exercises.length })
     : nameEn;
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -381,11 +385,11 @@ export default function LessonScreen() {
 
           <TouchableOpacity style={s.speakBtn} onPress={speakLetter} activeOpacity={0.7}>
             <Ionicons name="volume-high" size={28} color={Colors.white} />
-            <Text style={s.speakBtnText}>Tap to hear</Text>
+            <Text style={s.speakBtnText}>{t('tapToHear')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={s.continueBtn} onPress={beginExercises} activeOpacity={0.8}>
-            <Text style={s.continueBtnText}>I'm ready! →</Text>
+            <Text style={s.continueBtnText}>{t('imReady')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -395,7 +399,7 @@ export default function LessonScreen() {
         <View style={s.content}>
           {currentExercise.type === 'listen_tap' && (
             <>
-              <Text style={s.questionText}>Tap the letter you hear 👂</Text>
+              <Text style={s.questionText}>{t('tapLetterYouHear')}</Text>
               <TouchableOpacity style={s.playAgainBtn} onPress={speakLetter} activeOpacity={0.7}>
                 <Ionicons name="volume-high" size={36} color={Colors.green} />
               </TouchableOpacity>
@@ -403,30 +407,30 @@ export default function LessonScreen() {
           )}
 
           {currentExercise.type === 'tap_letter' && (
-            <Text style={s.questionText}>Which letter is "{currentExercise.name_en}"? 🤔</Text>
+            <Text style={s.questionText}>{t('whichLetterIs', { name: currentExercise.name_en })}</Text>
           )}
 
           {currentExercise.type === 'match_name' && (
-            <Text style={s.questionText}>Tap the form used {promptLabel} 🔤</Text>
+            <Text style={s.questionText}>{t('tapFormUsed', { label: promptLabel })}</Text>
           )}
 
           {currentExercise.type === 'tracing' && (
-            <Text style={s.questionText}>Trace the letter ✏️</Text>
+            <Text style={s.questionText}>{t('traceTheLetter')}</Text>
           )}
 
           {currentExercise.type === 'listen_repeat' && (
-            <Text style={s.questionText}>Listen and repeat 🔁</Text>
+            <Text style={s.questionText}>{t('listenAndRepeat')}</Text>
           )}
 
           {currentExercise.type === 'meaning_match' && (
             <>
               <Text style={s.duaContextText}>{currentExercise.arabic_text}</Text>
-              <Text style={s.questionText}>When do you say this dua? 🤲</Text>
+              <Text style={s.questionText}>{t('whenDoYouSay')}</Text>
             </>
           )}
 
           {currentExercise.type === 'word_order' && (
-            <Text style={s.questionText}>Put the words in order 🧩</Text>
+            <Text style={s.questionText}>{t('putWordsInOrder')}</Text>
           )}
 
           {(currentExercise.type === 'listen_tap' || currentExercise.type === 'tap_letter'
@@ -473,7 +477,7 @@ export default function LessonScreen() {
                 </Svg>
               </View>
 
-              {tracingHint && <Text style={s.traceHint}>Trace a bit more first! ✏️</Text>}
+              {tracingHint && <Text style={s.traceHint}>{t('traceMoreFirst')}</Text>}
 
               <View style={s.traceButtonRow}>
                 <TouchableOpacity
@@ -481,10 +485,10 @@ export default function LessonScreen() {
                   onPress={() => { setCompletedStrokes([]); setCurrentStroke([]); }}
                   activeOpacity={0.7}
                 >
-                  <Text style={s.clearBtnText}>Clear ↺</Text>
+                  <Text style={s.clearBtnText}>{t('clear')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.doneTracingBtn} onPress={evaluateTracing} activeOpacity={0.8}>
-                  <Text style={s.continueBtnText}>Done tracing! ✏️</Text>
+                  <Text style={s.continueBtnText}>{t('doneTracing')}</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -497,7 +501,7 @@ export default function LessonScreen() {
               </TouchableOpacity>
               <Text style={s.transliterationText}>{currentExercise.transliteration}</Text>
               <TouchableOpacity style={s.continueBtn} onPress={confirmListenRepeat} activeOpacity={0.8}>
-                <Text style={s.continueBtnText}>I repeated it! ✓</Text>
+                <Text style={s.continueBtnText}>{t('iRepeatedIt')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -533,9 +537,9 @@ export default function LessonScreen() {
       {phase === 'empty' && (
         <View style={s.content}>
           <Text style={s.doneEmoji}>📡</Text>
-          <Text style={s.doneSubtitle}>Couldn't load this lesson. Check your connection and try again.</Text>
+          <Text style={s.doneSubtitle}>{t('couldNotLoadLesson')}</Text>
           <TouchableOpacity style={s.continueBtn} onPress={() => router.back()} activeOpacity={0.8}>
-            <Text style={s.continueBtnText}>Back →</Text>
+            <Text style={s.continueBtnText}>{t('back')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -544,8 +548,8 @@ export default function LessonScreen() {
       {phase === 'done' && (
         <View style={s.content}>
           <Text style={s.doneEmoji}>🎉</Text>
-          <Text style={s.doneTitle}>Great job!</Text>
-          <Text style={s.doneSubtitle}>You learned {nameEn}</Text>
+          <Text style={s.doneTitle}>{t('greatJob')}</Text>
+          <Text style={s.doneSubtitle}>{t('youLearned', { name: nameEn })}</Text>
 
           {/* Stars */}
           <View style={s.starsRow}>
@@ -561,7 +565,7 @@ export default function LessonScreen() {
             onPress={() => { Speech.stop(); router.back(); }}
             activeOpacity={0.8}
           >
-            <Text style={s.continueBtnText}>Back to lessons →</Text>
+            <Text style={s.continueBtnText}>{t('backToLessons')}</Text>
           </TouchableOpacity>
         </View>
       )}

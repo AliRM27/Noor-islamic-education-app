@@ -69,8 +69,10 @@ export interface ApiTopic {
   slug: string;
   title_en: string;
   title_ar: string;
+  title_de: string;
   description_en: string;
   description_ar: string;
+  description_de: string;
   icon: string;
   color: string;
   category: string;
@@ -92,6 +94,7 @@ export interface ApiLesson {
   _id: string;
   title_en: string;
   title_ar: string;
+  title_de: string;
   position: number;
   is_free: boolean;
   letter?: {
@@ -120,7 +123,7 @@ export type ApiExercise =
   | { type: 'tracing'; order: number; letter: string; name_en: string; svg_path: string }
   | { type: 'tap_letter'; order: number; letter: string; name_en: string; name_ar: string }
   | { type: 'listen_repeat'; order: number; arabic_text: string; transliteration: string; audio_url: string }
-  | { type: 'meaning_match'; order: number; arabic_text: string; correct_occasion: string; distractor_occasions: string[] }
+  | { type: 'meaning_match'; order: number; arabic_text: string; correct_occasion: string; correct_occasion_de: string; distractor_occasions: string[]; distractor_occasions_de: string[] }
   | { type: 'word_order'; order: number; arabic_text: string; words: string[] };
 
 export const apiGetLessonExercises = async (lessonId: string): Promise<ApiExercise[]> => {

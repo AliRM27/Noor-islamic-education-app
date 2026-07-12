@@ -18,7 +18,9 @@ const duasData = [
     arabic_text: 'بِسْمِ اللَّهِ',
     transliteration: 'Bismillah',
     translation_en: 'In the name of Allah',
+    translation_de: 'Im Namen Allahs',
     occasion_en: 'Before you eat',
+    occasion_de: 'Bevor du isst',
     words: ['بِسْمِ', 'اللَّهِ'],
   },
   {
@@ -28,7 +30,9 @@ const duasData = [
     arabic_text: 'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',
     transliteration: 'Bismika Allahumma amutu wa ahya',
     translation_en: 'In Your name, O Allah, I die and I live',
+    translation_de: 'In Deinem Namen, o Allah, sterbe und lebe ich',
     occasion_en: 'Before you go to sleep',
+    occasion_de: 'Bevor du schlafen gehst',
     words: ['بِاسْمِكَ', 'اللَّهُمَّ', 'أَمُوتُ', 'وَأَحْيَا'],
   },
   {
@@ -38,7 +42,9 @@ const duasData = [
     arabic_text: 'الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا وَإِلَيْهِ النُّشُورُ',
     transliteration: "Alhamdu lillahil-ladhi ahyana wa ilayhin-nushur",
     translation_en: 'Praise be to Allah who gives us life, and to Him is the return',
+    translation_de: 'Alles Lob gebührt Allah, der uns das Leben gibt, und zu Ihm ist die Rückkehr',
     occasion_en: 'When you wake up',
+    occasion_de: 'Wenn du aufwachst',
     words: ['الْحَمْدُ', 'لِلَّهِ', 'الَّذِي', 'أَحْيَانَا', 'وَإِلَيْهِ', 'النُّشُورُ'],
   },
   {
@@ -48,7 +54,9 @@ const duasData = [
     arabic_text: 'بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ',
     transliteration: 'Bismillahi tawakkaltu ala Allah',
     translation_en: 'In the name of Allah, I place my trust in Allah',
+    translation_de: 'Im Namen Allahs, ich vertraue auf Allah',
     occasion_en: 'Before you leave the house',
+    occasion_de: 'Bevor du das Haus verlässt',
     words: ['بِسْمِ', 'اللَّهِ', 'تَوَكَّلْتُ', 'عَلَى', 'اللَّهِ'],
   },
   {
@@ -58,9 +66,21 @@ const duasData = [
     arabic_text: 'رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا',
     transliteration: 'Rabbi irhamhuma kama rabbayani sagheera',
     translation_en: 'My Lord, have mercy on them as they raised me when I was small',
+    translation_de: 'Mein Herr, erbarme Dich ihrer, so wie sie mich als Kind großgezogen haben',
     occasion_en: 'When you want to pray for your parents',
+    occasion_de: 'Wenn du für deine Eltern beten möchtest',
     words: ['رَبِّ', 'ارْحَمْهُمَا', 'كَمَا', 'رَبَّيَانِي', 'صَغِيرًا'],
   },
+];
+
+// Lesson titles in German — kept alongside (not on the Dua model, which has
+// no title_de) since duas.ts is the only place they're needed.
+const duaTitlesDe = [
+  'Vor dem Essen',
+  'Vor dem Schlafen',
+  'Beim Aufwachen',
+  'Beim Verlassen des Hauses',
+  'Für die Eltern',
 ];
 
 const exerciseSequence = [
@@ -76,8 +96,10 @@ export async function seedDuasTopic() {
       slug: 'duas',
       title_en: 'Duas',
       title_ar: 'الأدعية',
+      title_de: 'Duas',
       description_en: 'Learn short duas for everyday moments.',
       description_ar: 'تعلم أدعية قصيرة للحظات اليومية.',
+      description_de: 'Lerne kurze Bittgebete für alltägliche Momente.',
       icon: '🤲',
       color: 'tileBlue',
       category: 'basics',
@@ -97,11 +119,12 @@ export async function seedDuasTopic() {
   const insertedDuas = await Dua.insertMany(duasData);
   console.log(`✅ Inserted ${insertedDuas.length} duas`);
 
-  const lessonsData = insertedDuas.map((dua) => ({
+  const lessonsData = insertedDuas.map((dua, i) => ({
     topic_id: topic._id,
     dua_id: dua._id,
     title_en: dua.title_en,
     title_ar: dua.arabic_text,
+    title_de: duaTitlesDe[i],
     position: dua.position,
     exercises: exerciseSequence,
     is_free: dua.position <= 2, // First 2 duas are free

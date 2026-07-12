@@ -27,6 +27,10 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
 
     const completedCounts = await Progress.aggregate([
       { $match: { user_id: new mongoose.Types.ObjectId(userId) } },
+      // Only count progress whose lesson still exists — reseeding recreates
+      // lessons with new ids, orphaning old progress records otherwise.
+      { $lookup: { from: "lessons", localField: "lesson_id", foreignField: "_id", as: "lesson" } },
+      { $match: { lesson: { $ne: [] } } },
       { $group: { _id: { topic_id: "$topic_id", lesson_id: "$lesson_id" } } },
       { $group: { _id: "$_id.topic_id", count: { $sum: 1 } } },
     ]);
@@ -39,8 +43,10 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       slug: topic.slug,
       title_en: topic.title_en,
       title_ar: topic.title_ar,
+      title_de: topic.title_de,
       description_en: topic.description_en,
       description_ar: topic.description_ar,
+      description_de: topic.description_de,
       icon: topic.icon,
       color: topic.color,
       category: topic.category,
@@ -88,6 +94,7 @@ router.get(
         _id: lesson._id,
         title_en: lesson.title_en,
         title_ar: lesson.title_ar,
+        title_de: lesson.title_de,
         position: lesson.position,
         is_free: lesson.is_free,
         letter: lesson.letter_id ?? undefined,

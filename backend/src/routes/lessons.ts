@@ -45,12 +45,14 @@ router.get(
 
       // meaning_match needs wrong-answer occasions from other duas — fetch once
       // up front only if this lesson actually has a meaning_match exercise.
-      let distractorOccasions: string[] = [];
+      let distractorOccasionsEn: string[] = [];
+      let distractorOccasionsDe: string[] = [];
       if (dua && lesson.exercises.some((ex) => ex.type === "meaning_match")) {
         const others = await Dua.find({ _id: { $ne: dua._id } })
           .limit(2)
-          .select("occasion_en");
-        distractorOccasions = others.map((d) => d.occasion_en);
+          .select("occasion_en occasion_de");
+        distractorOccasionsEn = others.map((d) => d.occasion_en);
+        distractorOccasionsDe = others.map((d) => d.occasion_de);
       }
 
       // Build exercise payloads — client uses these to render exercises
@@ -106,7 +108,9 @@ router.get(
                 order: ex.order,
                 arabic_text: dua.arabic_text,
                 correct_occasion: dua.occasion_en,
-                distractor_occasions: distractorOccasions,
+                correct_occasion_de: dua.occasion_de,
+                distractor_occasions: distractorOccasionsEn,
+                distractor_occasions_de: distractorOccasionsDe,
               };
             case "word_order":
               return {

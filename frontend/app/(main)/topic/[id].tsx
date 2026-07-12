@@ -8,6 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, Radius, ARABIC_LETTERS } from '../../../src/constants/theme';
 import { apiGetTopicLessons, ApiLesson } from '../../../src/services/api';
 import { useUserStore } from '../../../src/store/userStore';
+import { t } from '../../../src/i18n';
+import { pick } from '../../../src/i18n/localizeContent';
 
 // Tile background colour cycling through 4 pastels
 const TILE_COLORS = [
@@ -22,7 +24,7 @@ export default function TopicLessonsScreen() {
   const { id, slug, titleEn } = useLocalSearchParams<{
     id: string; slug: string; titleEn: string;
   }>();
-  const { progress } = useUserStore();
+  const { progress, locale } = useUserStore();
 
   const [lessons, setLessons] = useState<ApiLesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function TopicLessonsScreen() {
         position: l.position,
         letter: l.letter?.letter,
         display: l.letter?.letter ?? '🤲',
-        nameEn: l.letter?.name_en ?? l.title_en,
+        nameEn: l.letter?.name_en ?? pick(locale, l.title_en, l.title_de),
         nameAr: l.letter?.name_ar ?? l.title_ar,
         isFree: l.is_free,
         stars: progress[l._id] ?? 0,
@@ -116,11 +118,11 @@ export default function TopicLessonsScreen() {
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
-          <Text style={s.backButtonText}>‹ Topics</Text>
+          <Text style={s.backButtonText}>{t('backToTopics')}</Text>
         </TouchableOpacity>
         <Text style={s.title}>{titleEn}</Text>
         <Text style={s.progress}>
-          {completedCount} / {items.length} lessons learned
+          {t('lessonsLearned', { completed: completedCount, total: items.length })}
         </Text>
         <View style={s.pillWrap}>
           <View
@@ -139,7 +141,7 @@ export default function TopicLessonsScreen() {
       ) : items.length === 0 ? (
         <View style={s.center}>
           <Text style={s.emptyText}>
-            {error ? 'Could not load lessons. Pull to retry.' : 'No lessons yet — check back soon!'}
+            {error ? t('couldNotLoadLessons') : t('noLessonsYet')}
           </Text>
         </View>
       ) : (

@@ -8,12 +8,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, Radius } from '../../src/constants/theme';
 import { apiGetTopics, ApiTopic } from '../../src/services/api';
 import { useUserStore } from '../../src/store/userStore';
+import { t, TranslationKey } from '../../src/i18n';
+import { pick } from '../../src/i18n/localizeContent';
 
 // Friendly section labels for known category tags — unknown tags just show as-is
-const CATEGORY_LABELS: Record<string, string> = {
-  alphabet: 'Alphabet',
-  basics: 'Basics',
-  kids: 'Kids',
+const CATEGORY_KEYS: Record<string, TranslationKey> = {
+  alphabet: 'categoryAlphabet',
+  basics: 'categoryBasics',
+  kids: 'categoryKids',
 };
 
 // Groups topics into sections by category, preserving each category's first
@@ -29,7 +31,7 @@ function groupByCategory(topics: ApiTopic[]) {
     map.get(topic.category)!.push(topic);
   }
   return order.map((category) => ({
-    title: CATEGORY_LABELS[category] ?? category,
+    title: CATEGORY_KEYS[category] ? t(CATEGORY_KEYS[category]) : category,
     data: map.get(category)!,
   }));
 }
@@ -42,8 +44,10 @@ const FALLBACK_TOPICS: ApiTopic[] = [
     slug: 'arabic-alphabet',
     title_en: 'Arabic Alphabet',
     title_ar: 'الحروف العربية',
+    title_de: 'Arabisches Alphabet',
     description_en: 'Learn to read and write the 28 letters.',
     description_ar: 'تعلم قراءة وكتابة الحروف العربية.',
+    description_de: 'Lerne die 28 Buchstaben zu lesen und zu schreiben.',
     icon: '📖',
     color: 'tileGreen',
     category: 'alphabet',
@@ -57,7 +61,7 @@ const FALLBACK_TOPICS: ApiTopic[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { name } = useUserStore();
+  const { name, locale } = useUserStore();
 
   const [topics, setTopics] = useState<ApiTopic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,23 +89,24 @@ export default function HomeScreen() {
   const renderTopic = ({ item }: { item: ApiTopic }) => {
     const tileColor = (Colors as any)[item.color] ?? Colors.tileGreen;
     const done = item.completed_count > 0 && item.completed_count >= item.lesson_count;
+    const title = pick(locale, item.title_en, item.title_de);
     return (
       <TouchableOpacity
         style={[s.card, { backgroundColor: tileColor }]}
         onPress={() =>
           router.push({
             pathname: '/(main)/topic/[id]',
-            params: { id: item._id, slug: item.slug, titleEn: item.title_en },
+            params: { id: item._id, slug: item.slug, titleEn: title },
           })
         }
         activeOpacity={0.8}
       >
         <Text style={s.cardIcon}>{item.icon}</Text>
         <View style={s.cardBody}>
-          <Text style={s.cardTitle}>{item.title_en}</Text>
-          <Text style={s.cardMeta}>Ages {item.min_age}-{item.max_age}</Text>
+          <Text style={s.cardTitle}>{title}</Text>
+          <Text style={s.cardMeta}>{t('agesRange', { min: item.min_age, max: item.max_age })}</Text>
           <Text style={s.cardProgress}>
-            {done ? '✓ Complete' : `${item.completed_count} / ${item.lesson_count} lessons`}
+            {done ? t('topicComplete') : t('lessonsProgress', { completed: item.completed_count, total: item.lesson_count })}
           </Text>
         </View>
       </TouchableOpacity>
@@ -112,8 +117,8 @@ export default function HomeScreen() {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.greeting}>🌙 Hi, {name || 'there'}!</Text>
-        <Text style={s.subtitle}>What do you want to learn today?</Text>
+        <Text style={s.greeting}>🌙 {t('greeting', { name: name || 'there' })}</Text>
+        <Text style={s.subtitle}>{t('whatToLearnToday')}</Text>
       </View>
 
       {loading ? (

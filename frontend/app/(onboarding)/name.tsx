@@ -9,10 +9,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Radius } from '../../src/constants/theme';
 import { apiCreateChild } from '../../src/services/api';
 import { useUserStore } from '../../src/store/userStore';
+import { t } from '../../src/i18n';
 
 export default function NameScreen() {
   const router = useRouter();
   const { setTokens, setUser, setOnboarded } = useUserStore();
+  useUserStore((s) => s.locale); // re-render on language change
 
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
@@ -22,7 +24,7 @@ export default function NameScreen() {
   const handleNext = async () => {
     if (step === 'name') {
       if (name.trim().length < 2) {
-        Alert.alert('', 'Please enter your name 😊');
+        Alert.alert('', t('alertEnterName'));
         return;
       }
       setStep('pin');
@@ -31,7 +33,7 @@ export default function NameScreen() {
 
     // PIN step
     if (pin.length !== 4) {
-      Alert.alert('', 'PIN must be 4 digits 🔒');
+      Alert.alert('', t('alertPinLength'));
       return;
     }
 
@@ -46,7 +48,7 @@ export default function NameScreen() {
       setOnboarded(true);
       router.replace('/(main)/');
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.error ?? 'Something went wrong');
+      Alert.alert(t('alertErrorTitle'), err?.response?.data?.error ?? t('alertSomethingWrong'));
     } finally {
       setLoading(false);
     }
@@ -71,10 +73,10 @@ export default function NameScreen() {
           {step === 'name' ? (
             <>
               <Text style={s.emoji}>👋</Text>
-              <Text style={s.title}>What's your name?</Text>
+              <Text style={s.title}>{t('whatsYourName')}</Text>
               <TextInput
                 style={s.input}
-                placeholder="Your name..."
+                placeholder={t('yourNamePlaceholder')}
                 placeholderTextColor={Colors.textLight}
                 value={name}
                 onChangeText={setName}
@@ -88,16 +90,16 @@ export default function NameScreen() {
           ) : (
             <>
               <Text style={s.emoji}>🔒</Text>
-              <Text style={s.title}>Hi, {name}!</Text>
+              <Text style={s.title}>{t('greeting', { name })}</Text>
               <Text style={s.subtitle}>
-                Set a 4-digit PIN so a parent can check your progress
+                {t('setPinSubtitle')}
               </Text>
               <TextInput
                 style={[s.input, s.pinInput]}
                 placeholder="● ● ● ●"
                 placeholderTextColor={Colors.textLight}
                 value={pin}
-                onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 4))}
+                onChangeText={(txt) => setPin(txt.replace(/\D/g, '').slice(0, 4))}
                 keyboardType="numeric"
                 secureTextEntry
                 maxLength={4}
@@ -116,7 +118,7 @@ export default function NameScreen() {
             activeOpacity={0.8}
           >
             <Text style={s.btnText}>
-              {loading ? 'Loading…' : step === 'name' ? 'Next →' : "Let's go! 🌙"}
+              {loading ? t('loading') : step === 'name' ? t('next') : t('letsGo')}
             </Text>
           </TouchableOpacity>
 

@@ -219,8 +219,10 @@ export async function seedAlphabetTopic() {
       slug: 'arabic-alphabet',
       title_en: 'Arabic Alphabet',
       title_ar: 'الحروف العربية',
+      title_de: 'Arabisches Alphabet',
       description_en: 'Learn to read and write the 28 letters of the Arabic alphabet.',
       description_ar: 'تعلم قراءة وكتابة الحروف العربية الثمانية والعشرين.',
+      description_de: 'Lerne, die 28 Buchstaben des arabischen Alphabets zu lesen und zu schreiben.',
       icon: '📖',
       color: 'tileGreen',
       category: 'alphabet',
@@ -245,6 +247,7 @@ export async function seedAlphabetTopic() {
     letter_id: letter._id,
     title_en: `The Letter ${letter.name_en}`,
     title_ar: `حَرف ${letter.name_ar}`,
+    title_de: `Der Buchstabe ${letter.name_en}`,
     position: letter.position,
     exercises: exerciseSequence,
     is_free: letter.position <= 5, // First 5 letters are free

@@ -2,12 +2,34 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, Radius } from '../../src/constants/theme';
+import { t } from '../../src/i18n';
+import { useUserStore } from '../../src/store/userStore';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const locale = useUserStore((s) => s.locale);
+  const setLocale = useUserStore((s) => s.setLocale);
 
   return (
     <SafeAreaView style={s.safe}>
+      {/* Language toggle */}
+      <View style={s.langRow}>
+        <TouchableOpacity
+          style={[s.langPill, locale === 'en' && s.langPillActive]}
+          onPress={() => setLocale('en')}
+          activeOpacity={0.7}
+        >
+          <Text style={[s.langPillText, locale === 'en' && s.langPillTextActive]}>EN</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.langPill, locale === 'de' && s.langPillActive]}
+          onPress={() => setLocale('de')}
+          activeOpacity={0.7}
+        >
+          <Text style={[s.langPillText, locale === 'de' && s.langPillTextActive]}>DE</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={s.container}>
 
         {/* Big letter icon */}
@@ -17,7 +39,7 @@ export default function WelcomeScreen() {
 
         {/* Title */}
         <Text style={s.title}>Noor</Text>
-        <Text style={s.subtitle}>Learn the Arabic Alphabet</Text>
+        <Text style={s.subtitle}>{t('welcomeSubtitle')}</Text>
 
         {/* CTA */}
         <TouchableOpacity
@@ -25,7 +47,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push('/(onboarding)/name')}
           activeOpacity={0.8}
         >
-          <Text style={s.btnText}>Let's Start! 🌙</Text>
+          <Text style={s.btnText}>{t('welcomeCta')}</Text>
         </TouchableOpacity>
 
       </View>
@@ -35,6 +57,29 @@ export default function WelcomeScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.white },
+  langRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    paddingTop: 12,
+  },
+  langPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.background,
+  },
+  langPillActive: {
+    backgroundColor: Colors.green,
+  },
+  langPillText: {
+    fontFamily: Fonts.bold,
+    fontSize: 13,
+    color: Colors.textMedium,
+  },
+  langPillTextActive: {
+    color: Colors.white,
+  },
   container: {
     flex: 1,
     alignItems: 'center',

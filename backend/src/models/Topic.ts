@@ -4,8 +4,10 @@ export interface ITopic extends Document {
   slug: string;
   title_en: string;
   title_ar: string;
+  title_de: string;
   description_en: string;
   description_ar: string;
+  description_de: string;
   icon: string;
   color: string;
   category: string;
@@ -20,8 +22,10 @@ const TopicSchema = new Schema<ITopic>({
   slug: { type: String, required: true, unique: true },
   title_en: { type: String, required: true },
   title_ar: { type: String, required: true },
+  title_de: { type: String, required: true },
   description_en: { type: String, required: true },
   description_ar: { type: String, required: true },
+  description_de: { type: String, required: true },
   icon: { type: String, required: true },
   color: { type: String, required: true },
   category: { type: String, required: true },

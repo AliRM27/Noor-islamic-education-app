@@ -6,7 +6,9 @@ export interface IDua extends Document {
   arabic_text: string;
   transliteration: string;
   translation_en: string;
+  translation_de: string;
   occasion_en: string;
+  occasion_de: string;
   words: string[];
   audio_url: string;
   position: number;
@@ -19,7 +21,9 @@ const DuaSchema = new Schema<IDua>({
   arabic_text: { type: String, required: true },
   transliteration: { type: String, required: true },
   translation_en: { type: String, required: true },
+  translation_de: { type: String, required: true },
   occasion_en: { type: String, required: true },
+  occasion_de: { type: String, required: true },
   words: [{ type: String, required: true }],
   audio_url: { type: String, default: '' },
   position: { type: Number, required: true, min: 1 },
