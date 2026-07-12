@@ -661,10 +661,11 @@ const s = StyleSheet.create({
   // Intro card
   letterCard: {
     width: CARD_SIZE,
-    height: CARD_SIZE * 0.5,
+    minHeight: CARD_SIZE * 0.45,
     borderRadius: Radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 28,
     gap: 8,
   },
   bigLetter: {
