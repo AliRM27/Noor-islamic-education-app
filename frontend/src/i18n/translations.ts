@@ -53,6 +53,11 @@ export const translations = {
     positionStart: 'at the START',
     positionMiddle: 'in the MIDDLE',
     positionEnd: 'at the END',
+    howToSpell: 'How to spell it',
+    formAlone: 'Alone',
+    formStart: 'Start',
+    formMiddle: 'Middle',
+    formEnd: 'End',
 
     // Lesson — tracing
     traceTheLetter: 'Trace the letter ✏️',
@@ -128,6 +133,11 @@ export const translations = {
     positionStart: 'am ANFANG',
     positionMiddle: 'in der MITTE',
     positionEnd: 'am ENDE',
+    howToSpell: 'So schreibst du es',
+    formAlone: 'Allein',
+    formStart: 'Anfang',
+    formMiddle: 'Mitte',
+    formEnd: 'Ende',
 
     // Lesson — tracing
     traceTheLetter: 'Zeichne den Buchstaben nach ✏️',

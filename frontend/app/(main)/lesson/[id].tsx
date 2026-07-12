@@ -34,6 +34,13 @@ const POSITION_LABEL_KEYS: Record<Position, TranslationKey> = {
   final: 'positionEnd',
 };
 
+const FORM_LABEL_KEYS: Record<Position, TranslationKey> = {
+  isolated: 'formAlone',
+  initial: 'formStart',
+  medial: 'formMiddle',
+  final: 'formEnd',
+};
+
 // A match_name exercise from the API covers all 4 positions at once — we split it
 // into one step per position so a lesson asks about all of them, not just one.
 type MatchNameApi = Extract<ApiExercise, { type: 'match_name' }>;
@@ -95,7 +102,7 @@ export default function LessonScreen() {
   const [promptLabel, setPromptLabel] = useState('');
   const [answered, setAnswered] = useState<boolean | null>(null); // null=unanswered, true=correct, false=wrong
   const [finalStars, setFinalStars] = useState(3);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
 
   // Tracing exercise
   const [completedStrokes, setCompletedStrokes] = useState<Point[][]>([]);
@@ -105,6 +112,10 @@ export default function LessonScreen() {
   // Word-order exercise
   const [wordBank, setWordBank] = useState<{ word: string; used: boolean }[]>([]);
   const [filledWords, setFilledWords] = useState<string[]>([]);
+
+  // Letter forms (isolated/initial/medial/final), shown on the intro screen
+  // when available — pulled from the match_name exercise, alphabet lessons only.
+  const [letterForms, setLetterForms] = useState<Record<Position, string> | null>(null);
 
   const correctCountRef = useRef(0);
   const totalAnswersRef = useRef(0);
@@ -140,8 +151,28 @@ export default function LessonScreen() {
     Speech.speak(nameAr, { language: 'ar', rate: 0.7 });
   };
 
-  // Fetch the real exercise list; fall back to a minimal offline sequence
+  // Fetch the real exercise list; fall back to a minimal offline sequence.
+  // Keyed off `id` (not mount-once) and resets all per-lesson state, since
+  // expo-router can reuse this screen instance across lesson-to-lesson
+  // navigations rather than always unmounting/remounting it.
   useEffect(() => {
+    setPhase('loading');
+    setExercises([]);
+    setStepIndex(0);
+    setChoices([]);
+    setPromptLabel('');
+    setAnswered(null);
+    setFinalStars(3);
+    setStartTime(Date.now());
+    setLetterForms(null);
+    setCompletedStrokes([]);
+    setCurrentStroke([]);
+    setTracingHint(false);
+    setWordBank([]);
+    setFilledWords([]);
+    correctCountRef.current = 0;
+    totalAnswersRef.current = 0;
+
     (async () => {
       let list: ApiExercise[] = [];
       try {
@@ -163,10 +194,12 @@ export default function LessonScreen() {
         setPhase('empty');
         return;
       }
+      const matchNameEx = list.find((e) => e.type === 'match_name');
+      if (matchNameEx?.type === 'match_name') setLetterForms(matchNameEx.forms);
       setExercises(expandSteps(list));
       setPhase('intro');
     })();
-  }, []);
+  }, [id]);
 
   // Animate card pop on correct
   const popCard = () => {
@@ -372,16 +405,34 @@ export default function LessonScreen() {
             style={[s.letterCard, { backgroundColor: Colors.tileYellow, transform: [{ scale: cardScale }, { translateX: shakeAnim }] }]}
           >
             {letter ? (
-              <>
-                <Text style={s.bigLetter}>{letter}</Text>
-                <Text style={s.letterNameAr}>{nameAr}</Text>
-              </>
+              <Text style={s.bigLetter}>{letter}</Text>
             ) : (
               <Text style={s.duaIntroText}>{nameAr}</Text>
             )}
           </Animated.View>
 
-          <Text style={s.letterNameEn}>{nameEn}</Text>
+          {letter ? (
+            <View style={s.nameRow}>
+              <Text style={s.letterNameEn}>{nameEn}</Text>
+              <Text style={s.letterNameArBig}>{nameAr}</Text>
+            </View>
+          ) : (
+            <Text style={s.letterNameEn}>{nameEn}</Text>
+          )}
+
+          {letterForms && (
+            <View style={s.formsCard}>
+              <Text style={s.formsTitle}>{t('howToSpell')}</Text>
+              <View style={s.formsRow}>
+                {POSITION_ORDER.map((pos) => (
+                  <View key={pos} style={s.formItem}>
+                    <Text style={s.formGlyph}>{letterForms[pos]}</Text>
+                    <Text style={s.formLabel}>{t(FORM_LABEL_KEYS[pos])}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
           <TouchableOpacity style={s.speakBtn} onPress={speakLetter} activeOpacity={0.7}>
             <Ionicons name="volume-high" size={28} color={Colors.white} />
@@ -610,7 +661,7 @@ const s = StyleSheet.create({
   // Intro card
   letterCard: {
     width: CARD_SIZE,
-    height: CARD_SIZE * 0.7,
+    height: CARD_SIZE * 0.5,
     borderRadius: Radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -622,11 +673,53 @@ const s = StyleSheet.create({
     color: Colors.textDark,
     textAlign: 'center',
   },
-  letterNameAr: {
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 14,
+  },
+  letterNameArBig: {
     fontFamily: Fonts.arabicBold,
-    fontSize: 22,
+    fontSize: 30,
     color: Colors.textMedium,
     writingDirection: 'rtl',
+  },
+  formsCard: {
+    width: '100%',
+    backgroundColor: Colors.background,
+    borderRadius: Radius.lg,
+    padding: 14,
+    gap: 10,
+  },
+  formsTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 13,
+    color: Colors.textMedium,
+    textAlign: 'center',
+  },
+  formsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  formItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.sm,
+    paddingVertical: 10,
+  },
+  formGlyph: {
+    fontFamily: Fonts.arabicBold,
+    fontSize: 30,
+    color: Colors.textDark,
+  },
+  formLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 10,
+    color: Colors.textMedium,
   },
   duaIntroText: {
     fontFamily: Fonts.arabicBold,
