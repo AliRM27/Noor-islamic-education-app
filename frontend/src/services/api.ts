@@ -4,7 +4,7 @@ import { useUserStore } from "../store/userStore";
 
 const BASE_URL =
   (Constants.expoConfig?.extra?.apiUrl as string) ||
-  "https://0z562xts-3000.euw.devtunnels.ms";
+  "https://noor-api-misty-frost-6302.fly.dev";
 
 const api = axios.create({
   baseURL: BASE_URL,

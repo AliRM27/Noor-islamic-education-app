@@ -37,8 +37,11 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://0z562xts-3000.euw.devtunnels.ms",
-      "router": {}
+      "apiUrl": "https://noor-api-misty-frost-6302.fly.dev",
+      "router": {},
+      "eas": {
+        "projectId": "3e9304b9-be16-4886-a505-d24a76be23e4"
+      }
     }
   }
 }
